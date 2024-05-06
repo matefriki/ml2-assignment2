@@ -49,8 +49,49 @@ def task1():
     """ Start of your code 
     """
 
+    #####################################################################################
+    # 1.1
+    def gaussian_kernel11(x, y, sigma=1.0):
+        return np.exp(-np.linalg.norm(x - y)**2 / (2 * sigma**2))
 
+    # exact kernel matrix
+    K = np.zeros((N, N))
+    for i in range(N):
+        for j in range(N):
+            K[i, j] = gaussian_kernel11(X[i], X[j])
 
+    axes[0, 4].imshow(K, cmap='viridis')
+
+    # Random Fourier Features approximation
+    Rs = [1, 10, 100, 1000]
+    for col, R in enumerate(Rs):
+        omega = np.random.normal(0, 1, (R, D))
+        b = np.random.uniform(0, 2 * np.pi, R)
+        Z_Fourier = np.sqrt(2.0 / R) * np.cos(np.dot(X, omega.T) + b)
+        K_Fourier = np.dot(Z_Fourier, Z_Fourier.T)
+        axes[0, col].imshow(K_Fourier, cmap='viridis')
+
+    #####################################################################################
+    # 1.2
+    def gaussian_kernel12(x, y, sigma=1.0):
+        return np.exp(-np.linalg.norm(x - y) ** 2 / (4 * sigma ** 2))  # Note the division by 4*sigma^2
+
+    K = np.zeros((N, N))
+    for i in range(N):
+        for j in range(N):
+            K[i, j] = gaussian_kernel12(X[i], X[j])
+
+    axes[1, 4].imshow(K, cmap='viridis')
+
+    # Gaussian Random Features approximation
+    Rs = [1, 10, 100, 1000]
+    for col, R in enumerate(Rs):
+        t_indices = np.random.randint(0, N, size=R)
+        t_samples = X[t_indices, :]
+
+        Z_Gauss = np.array([np.sqrt(2.0 / R) * np.exp(-np.linalg.norm(X - t, axis=1) ** 2 / 2) for t in t_samples]).T
+        K_Gauss = np.dot(Z_Gauss, Z_Gauss.T)
+        axes[1, col].imshow(K_Gauss, cmap='viridis')
 
     """ End of your code 
     """
@@ -121,9 +162,9 @@ if __name__ == '__main__':
     pdf = PdfPages('figures.pdf')
 
     fig1 = task1()
-    fig2 = task2()
+    # fig2 = task2()
     pdf.savefig(fig1)
-    pdf.savefig(fig2)
+    # pdf.savefig(fig2)
 
     pdf.close()
 
