@@ -11,6 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
+
 def task1():
     """ Subtask 1: Approximating Kernels
 
@@ -25,34 +26,34 @@ def task1():
     fig, axes = plt.subplots(2, 5)
     fig.set_size_inches(15, 8)
     font = {'fontsize': 18}
-    
+
     feat = ['Fourier', 'Gauss']
     for row in range(2):
-        axes[row,4].set_title('Exact kernel', **font)
-        axes[row,4].set_xticks([])
-        axes[row,4].set_yticks([])
-        
-        axes[row,0].set_ylabel('%s features' %feat[row], **font)
-        for col, R in enumerate([1,10,100,1000]):
-            axes[row,col].set_title(r'$\mathbf{Z} \mathbf{Z}^{\top}$, $R=%s$' % R, **font)
-            axes[row,col].set_xticks([])
-            axes[row,col].set_yticks([])
-    
+        axes[row, 4].set_title('Exact kernel', **font)
+        axes[row, 4].set_xticks([])
+        axes[row, 4].set_yticks([])
+
+        axes[row, 0].set_ylabel('%s features' % feat[row], **font)
+        for col, R in enumerate([1, 10, 100, 1000]):
+            axes[row, col].set_title(r'$\mathbf{Z} \mathbf{Z}^{\top}$, $R=%s$' % R, **font)
+            axes[row, col].set_xticks([])
+            axes[row, col].set_yticks([])
+
     # generate random 2D data
     N = 1000
     D = 2
 
-    X = np.ones((N,D))
-    X[:,0] = np.linspace(-3.,3.,N)
-    X[:,1] = np.sort(np.random.randn(N))
+    X = np.ones((N, D))
+    X[:, 0] = np.linspace(-3., 3., N)
+    X[:, 1] = np.sort(np.random.randn(N))
 
     """ Start of your code 
     """
-
+    np.random.seed(42)
     #####################################################################################
     # 1.1
     def gaussian_kernel11(x, y, sigma=1.0):
-        return np.exp(-np.linalg.norm(x - y)**2 / (2 * sigma**2))
+        return np.exp(-np.linalg.norm(x - y) ** 2 / (2 * sigma ** 2))
 
     # exact kernel matrix
     K = np.zeros((N, N))
@@ -89,7 +90,7 @@ def task1():
         t_indices = np.random.randint(0, N, size=R)
         t_samples = X[t_indices, :]
 
-        Z_Gauss = np.array([np.sqrt(2.0 / R) * np.exp(-np.linalg.norm(X - t, axis=1) ** 2 / 2) for t in t_samples]).T
+        Z_Gauss = np.array([np.sqrt(1.0 / R) * np.exp(-np.linalg.norm(X - t, axis=1) ** 2 / 2) for t in t_samples]).T
         K_Gauss = np.dot(Z_Gauss, Z_Gauss.T)
         axes[1, col].imshow(K_Gauss, cmap='viridis')
 
@@ -97,6 +98,7 @@ def task1():
     """
 
     return fig
+
 
 def task2():
     """ Subtask 2: Linear Regression with Feature Transforms
@@ -109,36 +111,36 @@ def task2():
         - include labels for the curves in a legend
     """
 
-    def gen_data(n,d):
-        sig = 1. 
+    def gen_data(n, d):
+        sig = 1.
 
         v_star = np.random.randn(d)
-        v_star = v_star/np.sqrt((v_star**2).sum())
+        v_star = v_star / np.sqrt((v_star ** 2).sum())
 
         # create input data on unit sphere
-        x = np.random.randn(n,d)
-        x = x/np.sqrt((x**2).sum(1,keepdims=True))
-        
+        x = np.random.randn(n, d)
+        x = x / np.sqrt((x ** 2).sum(1, keepdims=True))
+
         # create targets y
         y = np.zeros((n))
         for n_idx in np.arange(n):
-            y[n_idx] = 1/(0.25 + (x[n_idx]).sum()**2) + sig*np.random.randn(1)
-        
-        return x,y
+            y[n_idx] = 1 / (0.25 + (x[n_idx]).sum() ** 2) + sig * np.random.randn(1)
+
+        return x, y
 
     n = 200
     n_test = 100
     D = 5
 
-    x_, y_ = gen_data(n+n_test,D)
-    idx = np.random.permutation(np.arange(n+n_test))
-    x,y,x_test,y_test = x_[idx][:n],y_[idx][:n],x_[idx][n::],y_[idx][n::]
+    x_, y_ = gen_data(n + n_test, D)
+    idx = np.random.permutation(np.arange(n + n_test))
+    x, y, x_test, y_test = x_[idx][:n], y_[idx][:n], x_[idx][n::], y_[idx][n::]
 
     # features
-    R = np.arange(1,100)
+    R = np.arange(1, 100)
 
     # plot
-    fig2, ax = plt.subplots(1,2)
+    fig2, ax = plt.subplots(1, 2)
     ax[0].set_title('Random Fourier Features')
     ax[0].set_xlabel('features R')
 
@@ -147,8 +149,73 @@ def task2():
 
     """ Start of your code 
     """
+    alpha = 3.0  # Regularization parameter
 
+    def ridge_regression_fit(Phi, y, alpha):
+        Phi_T = Phi.T
+        n_features = Phi.shape[1]
+        I = np.eye(n_features)
+        theta = np.linalg.pinv(Phi_T @ Phi + alpha * I) @ Phi_T @ y
+        return theta
 
+    def ridge_regression_predict(Phi, theta):
+        return Phi @ theta
+
+    def compute_errors(Phi_train, Phi_test, y_train, y_test, alpha):
+        theta = ridge_regression_fit(Phi_train, y_train, alpha)
+        train_error = np.mean((ridge_regression_predict(Phi_train, theta) - y_train) ** 2)
+        test_error = np.mean((ridge_regression_predict(Phi_test, theta) - y_test) ** 2)
+        return train_error, test_error
+
+    def random_fourier_features(X, r):
+        # omega = np.random.normal(0, np.sqrt(2 * gamma), (X.shape[1], r))
+        omega = np.random.normal(0, 1, (r, D))
+        b = np.random.uniform(0, 2 * np.pi, r)
+        Phi = np.sqrt(2.0 / r) * np.cos(np.dot(X, omega.T) + b)
+        return Phi
+
+    def random_gauss_features(X, r):
+        t_indices = np.random.randint(0, X.shape[0], size=r)
+        t_samples = X[t_indices, :]
+        Phi = np.array([np.sqrt(1.0 / r) * np.exp(-np.linalg.norm(X - t, axis=1) ** 2 / 2) for t in t_samples]).T
+        return Phi
+
+    def run_experiment(feature_function):
+        train_errors = []
+        test_errors = []
+        for r in R:
+            train_errors_run = []
+            test_errors_run = []
+            for _ in range(5):  # Averaging over 5 runs
+                Phi_train = feature_function(x, r)
+                Phi_test = feature_function(x_test, r)
+                train_error, test_error = compute_errors(Phi_train, Phi_test, y, y_test, alpha)
+                train_errors_run.append(train_error)
+                test_errors_run.append(test_error)
+            train_errors.append((np.mean(train_errors_run), np.std(train_errors_run)))
+            test_errors.append((np.mean(test_errors_run), np.std(test_errors_run)))
+        return train_errors, test_errors
+
+    def plot_errors(ax, R, train_errors, test_errors, title):
+        ax.set_title(title)
+        ax.set_xlabel('Number of features (R)')
+        ax.set_ylabel('Error')
+        train_mean = [e[0] for e in train_errors]
+        train_std = [e[1] for e in train_errors]
+        test_mean = [e[0] for e in test_errors]
+        test_std = [e[1] for e in test_errors]
+
+        ax.plot(R, train_mean, label='Train Error')
+        ax.fill_between(R, np.array(train_mean) - np.array(train_std), np.array(train_mean) + np.array(train_std), alpha=0.2)
+        ax.plot(R, test_mean, label='Test Error')
+        ax.fill_between(R, np.array(test_mean) - np.array(test_std), np.array(test_mean) + np.array(test_std), alpha=0.2)
+        ax.legend()
+
+    train_errors_fourier, test_errors_fourier = run_experiment(random_fourier_features)
+    train_errors_gauss, test_errors_gauss = run_experiment(random_gauss_features)
+
+    plot_errors(ax[0], R, train_errors_fourier, test_errors_fourier, 'Random Fourier Features')
+    plot_errors(ax[1], R, train_errors_gauss, test_errors_gauss, 'Random Gauss Features')
 
     """ End of your code 
     """
@@ -158,14 +225,13 @@ def task2():
 
     return fig2
 
+
 if __name__ == '__main__':
     pdf = PdfPages('figures.pdf')
 
     fig1 = task1()
-    # fig2 = task2()
+    fig2 = task2()
     pdf.savefig(fig1)
-    # pdf.savefig(fig2)
+    pdf.savefig(fig2)
 
     pdf.close()
-
-
