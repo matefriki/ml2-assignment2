@@ -149,26 +149,25 @@ def task2():
 
     """ Start of your code 
     """
-    alpha = 3.0  # Regularization parameter
+    alpha = 3.0 # Regularization parameter
 
-    def ridge_regression_fit(Phi, y, alpha):
+    def LSR_regularized_fit(Phi, y_labels, alpha):
         Phi_T = Phi.T
         n_features = Phi.shape[1]
         I = np.eye(n_features)
-        theta = np.linalg.pinv(Phi_T @ Phi + alpha * I) @ Phi_T @ y
+        theta = np.linalg.pinv(Phi_T @ Phi + alpha * I) @ Phi_T @ y_labels
         return theta
 
-    def ridge_regression_predict(Phi, theta):
+    def LSR_regularized_predict(Phi, theta):
         return Phi @ theta
 
     def compute_errors(Phi_train, Phi_test, y_train, y_test, alpha):
-        theta = ridge_regression_fit(Phi_train, y_train, alpha)
-        train_error = np.mean((ridge_regression_predict(Phi_train, theta) - y_train) ** 2)
-        test_error = np.mean((ridge_regression_predict(Phi_test, theta) - y_test) ** 2)
+        theta = LSR_regularized_fit(Phi_train, y_train, alpha)
+        train_error = 1 / y_train.shape[0] * np.sum((LSR_regularized_predict(Phi_train, theta) - y_train) ** 2)
+        test_error = 1 / y_test.shape[0] * np.sum((LSR_regularized_predict(Phi_test, theta) - y_test) ** 2)
         return train_error, test_error
 
     def random_fourier_features(X, r):
-        # omega = np.random.normal(0, np.sqrt(2 * gamma), (X.shape[1], r))
         omega = np.random.normal(0, 1, (r, D))
         b = np.random.uniform(0, 2 * np.pi, r)
         Phi = np.sqrt(2.0 / r) * np.cos(np.dot(X, omega.T) + b)
@@ -180,20 +179,20 @@ def task2():
         Phi = np.array([np.sqrt(1.0 / r) * np.exp(-np.linalg.norm(X - t, axis=1) ** 2 / 2) for t in t_samples]).T
         return Phi
 
-    def run_experiment(feature_function):
+    def task26(feature_function):
         train_errors = []
         test_errors = []
         for r in R:
-            train_errors_run = []
-            test_errors_run = []
+            train_errors_r = []
+            test_errors_r = []
             for _ in range(5):  # Averaging over 5 runs
                 Phi_train = feature_function(x, r)
                 Phi_test = feature_function(x_test, r)
                 train_error, test_error = compute_errors(Phi_train, Phi_test, y, y_test, alpha)
-                train_errors_run.append(train_error)
-                test_errors_run.append(test_error)
-            train_errors.append((np.mean(train_errors_run), np.std(train_errors_run)))
-            test_errors.append((np.mean(test_errors_run), np.std(test_errors_run)))
+                train_errors_r.append(train_error)
+                test_errors_r.append(test_error)
+            train_errors.append((np.mean(train_errors_r), np.std(train_errors_r)))
+            test_errors.append((np.mean(test_errors_r), np.std(test_errors_r)))
         return train_errors, test_errors
 
     def plot_errors(ax, R, train_errors, test_errors, title):
@@ -206,13 +205,17 @@ def task2():
         test_std = [e[1] for e in test_errors]
 
         ax.plot(R, train_mean, label='Train Error')
-        ax.fill_between(R, np.array(train_mean) - np.array(train_std), np.array(train_mean) + np.array(train_std), alpha=0.2)
+        ax.fill_between(R, np.array(train_mean) - np.array(train_std),
+                        np.array(train_mean) + np.array(train_std),
+                        alpha=0.2)
         ax.plot(R, test_mean, label='Test Error')
-        ax.fill_between(R, np.array(test_mean) - np.array(test_std), np.array(test_mean) + np.array(test_std), alpha=0.2)
+        ax.fill_between(R, np.array(test_mean) - np.array(test_std),
+                        np.array(test_mean) + np.array(test_std),
+                        alpha=0.2)
         ax.legend()
 
-    train_errors_fourier, test_errors_fourier = run_experiment(random_fourier_features)
-    train_errors_gauss, test_errors_gauss = run_experiment(random_gauss_features)
+    train_errors_fourier, test_errors_fourier = task26(random_fourier_features)
+    train_errors_gauss, test_errors_gauss = task26(random_gauss_features)
 
     plot_errors(ax[0], R, train_errors_fourier, test_errors_fourier, 'Random Fourier Features')
     plot_errors(ax[1], R, train_errors_gauss, test_errors_gauss, 'Random Gauss Features')
