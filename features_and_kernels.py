@@ -50,10 +50,11 @@ def task1():
     """ Start of your code 
     """
     np.random.seed(42)
+
     #####################################################################################
     # 1.1
-    def gaussian_kernel11(x, y, sigma=1.0):
-        return np.exp(-np.linalg.norm(x - y) ** 2 / (2 * sigma ** 2))
+    def gaussian_kernel11(x, y):
+        return np.exp(-np.linalg.norm(x - y) ** 2 / 2)
 
     # exact kernel matrix
     K = np.zeros((N, N))
@@ -149,13 +150,13 @@ def task2():
 
     """ Start of your code 
     """
-    alpha = 3.0 # Regularization parameter
+    alpha = 3.0  # Regularization parameter
 
-    def LSR_regularized_fit(Phi, y_labels, alpha):
+    def LSR_regularized_fit(Phi, y_labels, lambda_reg):
         Phi_T = Phi.T
         n_features = Phi.shape[1]
         I = np.eye(n_features)
-        theta = np.linalg.pinv(Phi_T @ Phi + alpha * I) @ Phi_T @ y_labels
+        theta = np.linalg.pinv(Phi_T @ Phi + lambda_reg * I) @ Phi_T @ y_labels
         return theta
 
     def LSR_regularized_predict(Phi, theta):
@@ -219,6 +220,52 @@ def task2():
 
     plot_errors(ax[0], R, train_errors_fourier, test_errors_fourier, 'Random Fourier Features')
     plot_errors(ax[1], R, train_errors_gauss, test_errors_gauss, 'Random Gauss Features')
+
+    ###################################################################################################################
+    def gaussian_kernel11(x, x_prime):
+        return np.exp(-np.linalg.norm(x - x_prime) ** 2 / 2)
+
+    def gaussian_kernel12(x, x_prime, sigma=1.0):
+        return np.exp(-np.linalg.norm(x - x_prime) ** 2 / (4 * sigma ** 2))
+
+    def compute_kernel_matrix(x, y, kernel_func):
+        K = np.zeros((x.shape[0], y.shape[0]))
+        for i in range(x.shape[0]):
+            for j in range(y.shape[0]):
+                K[i, j] = kernel_func(x[i], y[j])
+        return K
+
+    def compute_a_star(K, y, lambda_reg):
+        a_star = -np.linalg.inv(K + lambda_reg * np.eye(K.shape[0])) @ (lambda_reg * y)
+        return a_star
+
+    def k_predict(y, K, a):
+        y_pred = K @ a
+        y_pred *= - 1/alpha
+        mse = np.mean((y_pred - y) ** 2)
+        return mse
+
+    def task34(kernel_func):
+        K_train = compute_kernel_matrix(x, x, kernel_func)
+        K_test = compute_kernel_matrix(x_test, x, kernel_func)
+        a_star = compute_a_star(K_train, y, alpha)
+
+        mse_train = k_predict(y, K_train, a_star)
+        mse_test = k_predict(y_test, K_test, a_star)
+
+        print("MSE Train:", mse_train)
+        print("MSE Test:", mse_test)
+        return mse_train, mse_test
+
+    train_error_fourier, test_error_fourier = task34(gaussian_kernel11)
+    train_error_gauss, test_error_gauss = task34(gaussian_kernel12)
+
+    ax[0].axhline(y=train_error_fourier, color='r', linestyle='--', label=f'Train MSE Dual')
+    ax[0].axhline(y=test_error_fourier, color='b', linestyle='--', label=f'Test MSE Dual')
+
+    ax[1].axhline(y=train_error_gauss, color='r', linestyle='--', label=f'Train MSE Dual')
+    ax[1].axhline(y=test_error_gauss, color='b', linestyle='--', label=f'Test MSE Dual')
+
 
     """ End of your code 
     """
