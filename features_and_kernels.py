@@ -50,22 +50,20 @@ def task1():
     """ Start of your code 
     """
     np.random.seed(42)
-
+    # Random Features Count
+    Rs = [1, 10, 100, 1000]
     #####################################################################################
     # 1.1
-    def gaussian_kernel11(x, y):
-        return np.exp(-np.linalg.norm(x - y) ** 2 / 2)
+    def gaussian_kernel11(x, x_prime):
+        return np.exp(-np.linalg.norm(x - x_prime) ** 2 / 2)
 
     # exact kernel matrix
     K = np.zeros((N, N))
     for i in range(N):
         for j in range(N):
             K[i, j] = gaussian_kernel11(X[i], X[j])
-
     axes[0, 4].imshow(K, cmap='viridis')
 
-    # Random Fourier Features approximation
-    Rs = [1, 10, 100, 1000]
     for col, R in enumerate(Rs):
         omega = np.random.normal(0, 1, (R, D))
         b = np.random.uniform(0, 2 * np.pi, R)
@@ -75,18 +73,15 @@ def task1():
 
     #####################################################################################
     # 1.2
-    def gaussian_kernel12(x, y, sigma=1.0):
-        return np.exp(-np.linalg.norm(x - y) ** 2 / (4 * sigma ** 2))  # Note the division by 4*sigma^2
+    def gaussian_kernel12(x, x_prime, sigma=1.0):
+        return np.exp(-np.linalg.norm(x - x_prime) ** 2 / (4 * sigma ** 2))  # Note the division by 4*sigma^2
 
     K = np.zeros((N, N))
     for i in range(N):
         for j in range(N):
             K[i, j] = gaussian_kernel12(X[i], X[j])
-
     axes[1, 4].imshow(K, cmap='viridis')
 
-    # Gaussian Random Features approximation
-    Rs = [1, 10, 100, 1000]
     for col, R in enumerate(Rs):
         t_indices = np.random.randint(0, N, size=R)
         t_samples = X[t_indices, :]
@@ -186,7 +181,7 @@ def task2():
         for r in R:
             train_errors_r = []
             test_errors_r = []
-            for _ in range(5):  # Averaging over 5 runs
+            for _ in range(5):
                 Phi_train = feature_function(x, r)
                 Phi_test = feature_function(x_test, r)
                 train_error, test_error = compute_errors(Phi_train, Phi_test, y, y_test, alpha)
@@ -201,18 +196,18 @@ def task2():
         ax.set_xlabel('Number of features (R)')
         ax.set_ylabel('Error')
         train_mean = [e[0] for e in train_errors]
-        train_std = [e[1] for e in train_errors]
         test_mean = [e[0] for e in test_errors]
+        train_std = [e[1] for e in train_errors]
         test_std = [e[1] for e in test_errors]
 
         ax.plot(R, train_mean, label='Train Error')
         ax.fill_between(R, np.array(train_mean) - np.array(train_std),
                         np.array(train_mean) + np.array(train_std),
-                        alpha=0.2)
+                        alpha=0.25)
         ax.plot(R, test_mean, label='Test Error')
         ax.fill_between(R, np.array(test_mean) - np.array(test_std),
                         np.array(test_mean) + np.array(test_std),
-                        alpha=0.2)
+                        alpha=0.25)
         ax.legend()
 
     train_errors_fourier, test_errors_fourier = task26(random_fourier_features)
