@@ -49,7 +49,7 @@ def task1():
 
     """ Start of your code 
     """
-    np.random.seed(42)
+    np.random.seed(1)
     # Random Features Count
     Rs = [1, 10, 100, 1000]
     #####################################################################################
@@ -145,7 +145,7 @@ def task2():
 
     """ Start of your code 
     """
-    alpha = 3.0  # Regularization parameter
+    alpha = 1  # Regularization parameter, renamed to alpha because lambda is a python keyword
 
     def LSR_regularized_fit(Phi, y_labels, lambda_reg):
         Phi_T = Phi.T
@@ -162,34 +162,44 @@ def task2():
         train_error = 1 / y_train.shape[0] * np.sum((LSR_regularized_predict(Phi_train, theta) - y_train) ** 2)
         test_error = 1 / y_test.shape[0] * np.sum((LSR_regularized_predict(Phi_test, theta) - y_test) ** 2)
         return train_error, test_error
-
+    
     def random_fourier_features(X, r):
         omega = np.random.normal(0, 1, (r, D))
         b = np.random.uniform(0, 2 * np.pi, r)
+        return (b, omega)
+    
+    def compute_fourier_feature_matrix(X, r, features):
+        b, omega = features
         Phi = np.sqrt(2.0 / r) * np.cos(np.dot(X, omega.T) + b)
         return Phi
 
     def random_gauss_features(X, r):
-        t_indices = np.random.randint(0, X.shape[0], size=r)
+        t_indices = np.random.choice(range(0, X.shape[0]), size=r, replace=False)
         t_samples = X[t_indices, :]
+        return t_samples
+
+    def compute_gauss_feature_matrix(X, r, features):
+        t_samples = features
         Phi = np.array([np.sqrt(1.0 / r) * np.exp(-np.linalg.norm(X - t, axis=1) ** 2 / 2) for t in t_samples]).T
         return Phi
 
-    def task26(feature_function):
+    def task26(feature_function, matrix_function):
         train_errors = []
         test_errors = []
         for r in R:
             train_errors_r = []
             test_errors_r = []
             for _ in range(5):
-                Phi_train = feature_function(x, r)
-                Phi_test = feature_function(x_test, r)
+                features = feature_function(x, r)
+                Phi_train = matrix_function(x, r, features)
+                Phi_test = matrix_function(x_test, r, features)
                 train_error, test_error = compute_errors(Phi_train, Phi_test, y, y_test, alpha)
                 train_errors_r.append(train_error)
                 test_errors_r.append(test_error)
             train_errors.append((np.mean(train_errors_r), np.std(train_errors_r)))
             test_errors.append((np.mean(test_errors_r), np.std(test_errors_r)))
         return train_errors, test_errors
+    
 
     def plot_errors(ax, R, train_errors, test_errors, title):
         ax.set_title(title)
@@ -210,8 +220,8 @@ def task2():
                         alpha=0.25)
         ax.legend()
 
-    train_errors_fourier, test_errors_fourier = task26(random_fourier_features)
-    train_errors_gauss, test_errors_gauss = task26(random_gauss_features)
+    train_errors_fourier, test_errors_fourier = task26(random_fourier_features, compute_fourier_feature_matrix)
+    train_errors_gauss, test_errors_gauss = task26(random_gauss_features, compute_gauss_feature_matrix)
 
     plot_errors(ax[0], R, train_errors_fourier, test_errors_fourier, 'Random Fourier Features')
     plot_errors(ax[1], R, train_errors_gauss, test_errors_gauss, 'Random Gauss Features')
